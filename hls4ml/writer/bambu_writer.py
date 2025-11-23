@@ -1036,11 +1036,19 @@ class BambuWriter(Writer):
         for h in headers:
             copyfile(srcpath + h, dstpath + h)
 
+        # gcem
+        gcem_src = os.path.join(filedir, '../templates/bambu/nnet_utils/gcem/')
+        gcem_dst = os.path.join(dstpath, 'gcem')  
+
+        if os.path.exists(gcem_dst):
+            rmtree(gcem_dst)
+        copytree(gcem_src, gcem_dst)
+
         # ap_types
         filedir = os.path.dirname(os.path.abspath(__file__))
 
-        srcpath = os.path.join(filedir, '../templates/bambu/ap_types/')
-        dstpath = f'{model.config.get_output_dir()}/firmware/ap_types/'
+        srcpath = os.path.join(filedir, '../templates/bambu/ac_types/')
+        dstpath = f'{model.config.get_output_dir()}/firmware/ac_types/'
 
         if os.path.exists(dstpath):
             rmtree(dstpath)
