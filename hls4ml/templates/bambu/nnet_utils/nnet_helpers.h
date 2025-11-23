@@ -15,6 +15,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <string>
+#include <sstream>
 
 namespace nnet {
 
