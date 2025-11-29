@@ -56,28 +56,44 @@ template <class data_T, class res_T, typename CONFIG_T> class Conv1DKernel {
 };
 
 template <int s, int b, int i, ap_q_mode Q, ap_o_mode O, int N> ap_fixed<b, i + s> bit_shift(ap_fixed<b, i, Q, O, N> x) {
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
     ap_fixed<b, i + s> r;
     r.range() = x.range();
     return r;
 };
 
 template <int s, int b, int i, ap_q_mode Q, ap_o_mode O, int N> ap_ufixed<b, i + s> bit_shift(ap_ufixed<b, i, Q, O, N> x) {
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
     ap_ufixed<b, i + s> r;
     r.range() = x.range();
     return r;
 };
 
 template <int s, int b> ap_fixed<b, s> bit_shift(ap_int<b> x) {
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
     ap_fixed<b, s> r;
     r.range() = x.range();
     return r;
 };
 
 template <int s, int b> ap_ufixed<b, s> bit_shift(ap_uint<b> x) {
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
     ap_ufixed<b, s> r;
     r.range() = x.range();
     return r;

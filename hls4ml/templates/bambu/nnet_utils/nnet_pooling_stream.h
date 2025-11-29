@@ -66,7 +66,11 @@ void compute_pool_encoded_2d(
         initialized = true;
     }
 
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
 
     if (data_T::size / CONFIG_T::n_filt > 1) {
         //#pragma HLS ARRAY_PARTITION variable=pool_table_height complete
@@ -289,7 +293,11 @@ void compute_pool_encoded_1d(const unsigned w_idx, const data_T &in_elem,
         initialized = true;
     }
 
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
 
     if (data_T::size / CONFIG_T::n_filt > 1) {
         //#pragma HLS ARRAY_PARTITION variable=pool_table_width complete

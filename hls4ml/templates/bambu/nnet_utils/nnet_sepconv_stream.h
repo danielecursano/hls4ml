@@ -60,7 +60,11 @@ void compute_depthwise_output_encoded(
     hls::stream<res_T> &res, res_T &res_pack, unsigned &outputs_ready,
     typename CONFIG_T::weight_t weights[CONFIG_T::kernel_size * CONFIG_T::n_chan],
     typename CONFIG_T::bias_t biases[CONFIG_T::n_chan], ap_uint<CONFIG_T::kernel_size> *pixel_idx) {
+<<<<<<< HEAD
     #pragma HLS inline
+=======
+    #pragma HLS INLINE
+>>>>>>> 99305700 (Fixed many issues introduced by the previous commit.)
 
 MultLoop:
     for (unsigned p = 0; p < data_T::size / CONFIG_T::n_chan; p++) {
