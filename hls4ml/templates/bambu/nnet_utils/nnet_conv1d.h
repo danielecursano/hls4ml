@@ -36,8 +36,7 @@ template <class data_T, class res_T, typename CONFIG_T>
 void conv_1d_cl(data_T data[CONFIG_T::in_width * CONFIG_T::n_chan], res_T res[CONFIG_T::out_width * CONFIG_T::n_filt],
                 typename CONFIG_T::weight_t weights[CONFIG_T::filt_width * CONFIG_T::n_chan * CONFIG_T::n_filt],
                 typename CONFIG_T::bias_t biases[CONFIG_T::n_filt]) {
-    // Inlining helps reduce latency, but may also cause timing issues in some cases, use carefully.
-    #pragma HLS INLINE recursive
+    //#pragma HLS INLINE region
 
     CONFIG_T::template conv_kernel<data_T, res_T, CONFIG_T>::conv(data, res, weights, biases);
 }
@@ -49,8 +48,7 @@ void pointwise_conv_1d_cl(data_T data[CONFIG_T::in_width * CONFIG_T::n_chan],
                           typename CONFIG_T::bias_t biases[CONFIG_T::n_filt]) {
     assert(CONFIG_T::filt_width == 1);
 
-    // Inlining helps reduce latency, but may also cause timing issues in some cases, use carefully.
-    #pragma HLS INLINE recursive
+    //#pragma HLS INLINE region
 
     CONFIG_T::template conv_kernel<data_T, res_T, CONFIG_T>::conv(data, res, weights, biases);
 }
@@ -61,7 +59,6 @@ template <class data_T, class res_T, typename CONFIG_T> class Conv1DLatency : pu
                      typename CONFIG_T::weight_t weights[CONFIG_T::filt_width * CONFIG_T::n_chan * CONFIG_T::n_filt],
                      typename CONFIG_T::bias_t biases[CONFIG_T::n_filt]) {
         //#pragma HLS INLINE region
-        #pragma HLS INLINE recursive
         conv_1d_latency_cl<data_T, res_T, CONFIG_T>(data, res, weights, biases);
     }
 };
@@ -72,8 +69,47 @@ template <class data_T, class res_T, typename CONFIG_T> class Conv1DResource : p
                      typename CONFIG_T::weight_t weights[CONFIG_T::filt_width * CONFIG_T::n_chan * CONFIG_T::n_filt],
                      typename CONFIG_T::bias_t biases[CONFIG_T::n_filt]) {
         //#pragma HLS INLINE region
-        #pragma HLS INLINE recursive
         conv_1d_resource_cl<data_T, res_T, CONFIG_T>(data, res, weights, biases);
+    }
+};
+
+template <class data_T, class res_T, typename CONFIG_T>
+class BatchedDenseForConv1D : public nnet::Conv1DKernel<data_T, res_T, CONFIG_T> {
+  public:
+    static void conv(data_T data[CONFIG_T::in_width * CONFIG_T::n_chan], res_T res[CONFIG_T::out_width * CONFIG_T::n_filt],
+                     typename CONFIG_T::weight_t weights[CONFIG_T::n_chan * CONFIG_T::n_filt],
+                     typename CONFIG_T::bias_t biases[CONFIG_T::n_filt]) {
+
+        //#pragma HLS PIPELINE II = 1
+        //#pragma HLS INLINE RECURSIVE
+        data_T data_tmp[CONFIG_T::n_partitions][CONFIG_T::in_width * CONFIG_T::n_chan / CONFIG_T::n_partitions];
+        //#pragma HLS ARRAY_PARTITION variable=data_tmp complete dim=0
+        res_T res_tmp[CONFIG_T::n_partitions][CONFIG_T::out_width * CONFIG_T::n_filt / CONFIG_T::n_partitions];
+        //#pragma HLS ARRAY_PARTITION variable=res_tmp complete dim=0
+
+        #pragma clang loop unroll(full)
+        for (int jj = 0; jj < CONFIG_T::n_partitions; jj++) {
+            //#pragma HLS UNROLL
+            #pragma clang loop unroll(full)
+            for (int ii = 0; ii < CONFIG_T::in_width * CONFIG_T::n_chan / CONFIG_T::n_partitions; ii++) {
+                //#pragma HLS UNROLL
+                data_tmp[jj][ii] = data[jj * CONFIG_T::in_width * CONFIG_T::n_chan / CONFIG_T::n_partitions + ii];
+            }
+        }
+
+        for (int jj = 0; jj < CONFIG_T::n_partitions; jj++) {
+            nnet::pointwise_conv_1d_latency_cl<data_T, res_T, CONFIG_T>(data_tmp[jj], res_tmp[jj], weights, biases);
+        }
+
+        #pragma clang loop unroll(full)
+        for (int jj = 0; jj < CONFIG_T::n_partitions; jj++) {
+            //#pragma HLS UNROLL
+            #pragma clang loop unroll(full)
+            for (int ii = 0; ii < CONFIG_T::out_width * CONFIG_T::n_filt / CONFIG_T::n_partitions; ii++) {
+                //#pragma HLS UNROLL
+                res[jj * CONFIG_T::out_width * CONFIG_T::n_filt / CONFIG_T::n_partitions + ii] = res_tmp[jj][ii];
+            }
+        }
     }
 };
 
