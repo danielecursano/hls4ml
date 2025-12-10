@@ -738,6 +738,7 @@ template <class data_T, class res_T, typename CONFIG_T> void elu(hls::stream<dat
 
 template <class data_T, class res_T, typename CONFIG_T> void selu(hls::stream<data_T> &data, hls::stream<res_T> &res) {
     // Initialize the lookup table
+#ifdef OLD_SELU
 #ifdef __HLS_SYN__
     bool initialized = false;
     typename CONFIG_T::table_t selu_table[CONFIG_T::table_size];
@@ -749,6 +750,9 @@ template <class data_T, class res_T, typename CONFIG_T> void selu(hls::stream<da
         init_selu_table<CONFIG_T, CONFIG_T::table_size>(selu_table);
         initialized = true;
     }
+#else
+    static constexpr const ::std::array<typename CONFIG_T::table_t, CONFIG_T::table_size> selu_table = init_selu_table<CONFIG_T, CONFIG_T::table_size>();
+#endif
 
 SeluActLoop:
     for (int i = 0; i < CONFIG_T::n_in / res_T::size; i++) {
