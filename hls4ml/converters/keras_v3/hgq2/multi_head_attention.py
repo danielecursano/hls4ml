@@ -4,7 +4,7 @@ from inspect import Signature
 
 import numpy as np
 
-from ._base import QEinsumDenseHandler, QLayerHandler, register
+from ._base import QEinsumDenseHandler, QLayerHandler
 from .einsum import QEinsumHandler
 from .softmax import QSoftmaxHandler
 
@@ -13,7 +13,6 @@ if typing.TYPE_CHECKING:
     from keras import KerasTensor
 
 
-@register
 class QMultiHeadAttentionHandler(QLayerHandler):
     handles = ('hgq.layers.multi_head_attention.QMultiHeadAttention',)
 
@@ -34,9 +33,9 @@ class QMultiHeadAttentionHandler(QLayerHandler):
         tensor_O, *tensor_attn = out_tensors
 
         node_index: int = tensor_q._keras_history.node_index  # type: ignore
-        assert all(
-            [node_index == inp._keras_history.node_index for inp in layer.input[1:]]
-        ), f'Critical error handling layer {layer.name}'
+        assert all([node_index == inp._keras_history.node_index for inp in layer.input[1:]]), (
+            f'Critical error handling layer {layer.name}'
+        )
         node = layer._inbound_nodes[node_index]
 
         args = node.arguments.args
@@ -127,7 +126,6 @@ class QMultiHeadAttentionHandler(QLayerHandler):
         return configs
 
 
-@register
 class QLinformerAttentionHandler(QMultiHeadAttentionHandler):
     handles = ('hgq.layers.linformer_attention.QLinformerAttention',)
 
@@ -151,9 +149,9 @@ class QLinformerAttentionHandler(QMultiHeadAttentionHandler):
         unique_name: str = layer.name
 
         node_index: int = tensor_q._keras_history.node_index  # type: ignore
-        assert all(
-            [node_index == inp._keras_history.node_index for inp in layer.input[1:]]
-        ), f'Critical error handling layer {layer.name}'
+        assert all([node_index == inp._keras_history.node_index for inp in layer.input[1:]]), (
+            f'Critical error handling layer {layer.name}'
+        )
         node = layer._inbound_nodes[node_index]
 
         args = node.arguments.args
