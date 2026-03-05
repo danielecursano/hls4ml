@@ -2,29 +2,27 @@ import ROOT
 import numpy as np
 
 from hls4ml.backends import FPGABackend
-from hls4ml.backends.sofie.sofie_utils import get_model_config, generate_sofie_model
 from hls4ml.model.flow import register_flow
 
 class SofieBackend(FPGABackend):
     def __init__(self):
         super().__init__('Sofie')
-        self._default_flow = register_flow('sofie_flow', None, requires=['optimize'], backend=self.name)
+        initializers = self._get_layer_initializers()
+        self._default_flow = register_flow('init_layers', initializers, requires=[], backend=self.name)
+        # TODO add flows for optimization?
         
     def create_initial_config(self, **kwargs):
         return dict()
         
     def get_default_flow(self):
         return self._default_flow
-    
+            
+    def get_writer_flow(self):
+        return register_flow('write', ['make_stamp', 'sofie:write_hls'], requires=[self._default_flow], backend=self.name) 
+        
     def compile(self, model):
         raise NotImplementedError(f"{self.name} backend does not support compile(). To run predictions use model.predict()")
-        
-    def write(self, model):
-        model_config = get_model_config(model)
-        rmodel = generate_sofie_model(model_config)
-        rmodel.Generate()
-        rmodel.OutputGenerated()
-        
+    
     def predict(self, model, x):
         project_name = model.config.get_project_name()
         ROOT.gInterpreter.Declare(f'#include "{project_name}.hxx"')

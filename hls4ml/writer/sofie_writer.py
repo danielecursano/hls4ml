@@ -1,18 +1,20 @@
 from ROOT.TMVA.Experimental import SOFIE
 import numpy as np
 
+from hls4ml.writer.writers import Writer
+
 def parse(layer):
-    """
-    Returns general informations about the given layer.
-    """
-    return {
-            "name": layer.name,
-            "type": layer.class_name,
-            "inputs": layer.inputs,
-            "outputs": layer.outputs,
-            "attributes": dict(layer.attributes)
-        }
-        
+        """
+        Returns general informations about the given layer.
+        """
+        return {
+                "name": layer.name,
+                "type": layer.class_name,
+                "inputs": layer.inputs,
+                "outputs": layer.outputs,
+                "attributes": dict(layer.attributes)
+            }
+            
 def get_model_config(model):
     """
     Returns the model configuration.
@@ -26,12 +28,12 @@ def get_model_config(model):
             model_config["input_names"].append(layer_info["outputs"])
             continue
         model_config["layers"].append(layer_info)
-    return model_config 
-    
+    return model_config
+
 class OperatorNotImplemented(Exception):
     def __init__(self, layer):
         super().__init__(f"Operator {layer.get('type')} not implemented")
-        
+
 def MakeActivation(layer, rmodel):
     return to_ROperator(layer, rmodel, name=layer["attributes"]["activation"])
                                                                        
@@ -85,7 +87,8 @@ def to_ROperator(layer, rmodel, name=None):
 def generate_sofie_model(hls_config):
     if len(hls_config["layers"]) == 0:
         raise ValueError("Model must contain at least one layer")
-        
+    
+    # TODO add project dir, different from cwd
     rmodel = SOFIE.RModel.RModel(hls_config["model_name"])
     
     # config inputs
@@ -113,3 +116,9 @@ def generate_sofie_model(hls_config):
             
     return rmodel
     
+class SofieWriter(Writer):
+        
+    def write_hls(self, model):
+        rmodel = generate_sofie_model(get_model_config(model))
+        rmodel.Generate()
+        rmodel.OutputGenerated()
