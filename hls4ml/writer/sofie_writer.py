@@ -1,6 +1,8 @@
 from ROOT.TMVA.Experimental import SOFIE
 import numpy as np
 import os
+import stat
+from pathlib import Path
 
 from hls4ml.writer.writers import Writer
 
@@ -119,11 +121,40 @@ def generate_sofie_model(hls_config):
 class SofieWriter(Writer):
 
     def write_project_dir(self, model):
-        if not os.path.isdir(f'{model.config.get_output_dir()}/'):
-            os.makedirs(f'{model.config.get_output_dir()}/')
+        if not os.path.isdir(f'{model.config.get_output_dir()}/firmware'):
+            os.makedirs(f'{model.config.get_output_dir()}/firmware')
+
+    def write_build_script(self, model):
+        filedir = Path(__file__).parent
+        # build_lib.sh
+        build_lib_src = (filedir / '../templates/sofie/build_lib.sh').resolve()
+        build_lib_dst = Path(f'{model.config.get_output_dir()}/build_lib.sh').resolve()
+        with open(build_lib_src) as src, open(build_lib_dst, 'w') as dst:
+            for line in src.readlines():
+                line = line.replace('myproject', model.config.get_project_name())
+                line = line.replace('mystamp', model.config.get_config_value('Stamp'))
+
+                dst.write(line)
+        build_lib_dst.chmod(build_lib_dst.stat().st_mode | stat.S_IEXEC)
+        
+    def write_bridge(self, model):
+        filedir = Path(__file__).parent
+        model_inputs = [k.name for k in model.get_input_variables()]
+        # build_lib.sh
+        bridge_src = (filedir / '../templates/sofie/myproject.cpp').resolve()
+        bridge_dst = Path(f'{model.config.get_output_dir()}/myproject.cpp').resolve()
+        with open(bridge_src) as src, open(bridge_dst, 'w') as dst:
+            for line in src.readlines():
+                line = line.replace('myproject', model.config.get_project_name())
+                line = line.replace('//insert_inputs', ",".join([f"const float* {inp}" for inp in model_inputs]))
+                line = line.replace('//insert_ref_inputs', ",".join([f"{inp}" for inp in model_inputs]))
+                line = line.replace('//insert_dat_path', f"{model.config.get_output_dir()}/{model.config.get_project_name()}.dat")
+                dst.write(line)
         
     def write_hls(self, model):
         self.write_project_dir(model)
+        self.write_build_script(model)
+        self.write_bridge(model)
         rmodel = generate_sofie_model(get_model_config(model))
         rmodel.Generate()
         rmodel.OutputGenerated(f"./{model.config.get_output_dir()}/{model.config.get_project_name()}.hxx")

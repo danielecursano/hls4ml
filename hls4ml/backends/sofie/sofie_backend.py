@@ -20,17 +20,6 @@ class SofieBackend(FPGABackend):
             
     def get_writer_flow(self):
         return self._writer_flow
-        
-    def compile(self, model):
-        raise NotImplementedError(f"{self.name} backend does not support compile(). To run predictions use model.predict()")
-    
-    def predict(self, model, x):
-        session = self.get_sofie_session(model)
-        try:
-            x = np.asarray(x, dtype=np.float32)
-        except Exception as e:
-            raise e
-        return session.infer(x)
     
     @staticmethod
     def get_sofie_session(model):
@@ -41,4 +30,6 @@ class SofieBackend(FPGABackend):
             raise RuntimeError(f"SOFIE namespace TMVA_SOFIE_{model.config.get_project_name()} not found.")
         session = sofie_project.Session(header_path+".dat")
         return session
+        
+        
         
