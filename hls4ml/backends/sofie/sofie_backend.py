@@ -9,6 +9,7 @@ class SofieBackend(FPGABackend):
         super().__init__('Sofie')
         initializers = self._get_layer_initializers()
         self._default_flow = register_flow('init_layers', initializers, requires=[], backend=self.name)
+        self._writer_flow = register_flow('write', ['make_stamp', 'sofie:write_hls'], requires=[self._default_flow], backend=self.name)
         # TODO add flows for optimization?
         
     def create_initial_config(self, **kwargs):
@@ -18,7 +19,7 @@ class SofieBackend(FPGABackend):
         return self._default_flow
             
     def get_writer_flow(self):
-        return register_flow('write', ['make_stamp', 'sofie:write_hls'], requires=[self._default_flow], backend=self.name) 
+        return self._writer_flow
         
     def compile(self, model):
         raise NotImplementedError(f"{self.name} backend does not support compile(). To run predictions use model.predict()")
@@ -35,4 +36,4 @@ class SofieBackend(FPGABackend):
         except Exception as e:
             raise e
         return session.infer(x)
-   
+        
