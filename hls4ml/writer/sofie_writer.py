@@ -1,5 +1,6 @@
 from ROOT.TMVA.Experimental import SOFIE
 import numpy as np
+import os
 
 from hls4ml.writer.writers import Writer
 
@@ -88,7 +89,6 @@ def generate_sofie_model(hls_config):
     if len(hls_config["layers"]) == 0:
         raise ValueError("Model must contain at least one layer")
     
-    # TODO add project dir, different from cwd
     rmodel = SOFIE.RModel.RModel(hls_config["model_name"])
     
     # config inputs
@@ -117,8 +117,13 @@ def generate_sofie_model(hls_config):
     return rmodel
     
 class SofieWriter(Writer):
+
+    def write_project_dir(self, model):
+        if not os.path.isdir(f'{model.config.get_output_dir()}/'):
+            os.makedirs(f'{model.config.get_output_dir()}/')
         
     def write_hls(self, model):
+        self.write_project_dir(model)
         rmodel = generate_sofie_model(get_model_config(model))
         rmodel.Generate()
-        rmodel.OutputGenerated()
+        rmodel.OutputGenerated(f"./{model.config.get_output_dir()}/{model.config.get_project_name()}.hxx")

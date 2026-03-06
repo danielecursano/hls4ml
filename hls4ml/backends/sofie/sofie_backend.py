@@ -25,15 +25,20 @@ class SofieBackend(FPGABackend):
         raise NotImplementedError(f"{self.name} backend does not support compile(). To run predictions use model.predict()")
     
     def predict(self, model, x):
-        project_name = model.config.get_project_name()
-        ROOT.gInterpreter.Declare(f'#include "{project_name}.hxx"')
-        sofie_project = getattr(ROOT, f"TMVA_SOFIE_{project_name}", None)
-        if not sofie_project:
-            raise Exception("Sofie project not found")
-        session = sofie_project.Session()
+        session = self.get_sofie_session(model)
         try:
             x = np.asarray(x, dtype=np.float32)
         except Exception as e:
             raise e
         return session.infer(x)
+    
+    @staticmethod
+    def get_sofie_session(model):
+        header_path = model.config.get_output_dir() + "/" + model.config.get_project_name()
+        ROOT.gInterpreter.Declare(f'#include "{header_path}.hxx"')
+        sofie_project = getattr(ROOT, f"TMVA_SOFIE_{model.config.get_project_name()}", None)
+        if not sofie_project:
+            raise RuntimeError(f"SOFIE namespace TMVA_SOFIE_{model.config.get_project_name()} not found.")
+        session = sofie_project.Session(header_path+".dat")
+        return session
         
